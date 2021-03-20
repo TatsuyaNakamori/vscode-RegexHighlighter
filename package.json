@@ -1,16 +1,27 @@
 {
   "name": "regexhighlighter",
   "displayName": "RegexHighlighter",
-  "description": "",
+  "description": "%ext.description%",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.54.0"
   },
+  "galleryBanner": {
+    "color": "#C0C0C8",
+    "theme": "dark"
+  },
   "categories": [
+    "Themes",
     "Other"
   ],
+  "license": "MIT",
+  "preview": true,
+  "keywords": [
+    "regex",
+    "highligh"
+  ],
   "activationEvents": [
-    "onCommand:regexhighlighter.helloWorld"
+    "*"
   ],
   "main": "./out/extension.js",
   "contributes": {
