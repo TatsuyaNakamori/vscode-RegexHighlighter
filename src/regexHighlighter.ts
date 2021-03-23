@@ -3,27 +3,14 @@
 // See LICENSE in the project root for license information.
 // ============================================================
 import * as vscode from 'vscode';
+import * as config from './config';
 
 
+// ===================================
+// Global Vars, interface, functions
+// ===================================
 let decorationTypes:vscode.TextEditorDecorationType[] = [];
 let curSelectionLineText:(string|undefined);
-
-const colors = [
-    "rgba(186, 0, 0, 1)",
-    "rgba(0, 80, 0, 1)",
-    "rgba(0, 0, 186, 1)",
-    "rgba(60, 60, 60, 1)",
-    "rgba(0, 80, 186, 1)",
-    "rgba(60, 0, 60, 1)",
-    "rgba(60, 60, 0, 1)"
-];
-
-const ERROR_COLORS = {
-    bracketBegin: "rgba(225, 0, 0, 0.9)",
-    bracketEnd: "rgba(225, 0, 0, 0.9)",
-    noNesting: "rgba(100, 50, 50, 0.6)"
-};
-
 
 interface RangeInfo {
     range: [number, number],
@@ -36,27 +23,28 @@ interface BracketInfo {
     index: number
 }
 
+export function updateDecorations(editor:vscode.TextEditor, changedConfig?:boolean) {
+    if (config.getStopHighlighting()) {
+        disposeDecorationType();
+        return
+    }
 
-export function updateDecorations(editor:vscode.TextEditor) {
+    // Get the current line of text and check if it needs to be updated.
     const selLine = editor.selection.anchor.line;
     const lineText = editor.document.lineAt(selLine).text;
-
-    if (!curSelectionLineText || curSelectionLineText != lineText) {
+    if (changedConfig || (!curSelectionLineText || curSelectionLineText != lineText)) {
         curSelectionLineText = lineText;
     } else {
         return
     }
 
-    for (const decorationType of decorationTypes) {
-        decorationType.dispose();
-    }
-    decorationTypes = [];
+    disposeDecorationType();
 
     // First, Extracting regular expression strings
     // Result:
     //     offset: Number of characters before the start of the regular expression string
     //     regString: Regular expression string
-    const regRegString = /(?<prev>.*?\/)(?<regString>.*)\//;
+    const regRegString = /(?<prev>.*?r?(\/|\"|\"\"\"|\'|\'\'\'))(?<regString>.*)(\/|\"|\"\"\"|\'|\'\'\')/;
     let match = regRegString.exec(lineText);
     if (!match) { return }
     const matchGroups = match.groups;
@@ -91,10 +79,6 @@ export function updateDecorations(editor:vscode.TextEditor) {
         }
         if (bracketEnd && !escapeFlag) {
             bracketCount -= 1;
-            if (bracketCount < 0) {
-                console.log("return", bracketCount);
-                // break
-            }
         }
 
         // BracketInfo
@@ -114,7 +98,7 @@ export function updateDecorations(editor:vscode.TextEditor) {
         bracketInfoList.push(bracketInfo);
     }
 
-    console.log(bracketInfoList);
+    // console.log(bracketInfoList);
 
     let loopStart:number = 0;
     let nextLoopStart:number = 0;
@@ -124,16 +108,11 @@ export function updateDecorations(editor:vscode.TextEditor) {
         let referenceNestDepth:number = 0;
         let rangeStart:number = 0;
         let rangeEnd:number = 0;
-        // console.log("============================================================================");
-        // console.log("loopStart", "bracketInfoList.length=", loopStart, bracketInfoList.length);
 
         for (let i = loopStart; i < bracketInfoList.length; i++) {
             const type      = bracketInfoList[i].type;
             const index     = bracketInfoList[i].index;
             const nestDepth = bracketInfoList[i].nestDepth;
-
-            // console.log("=========");
-            // console.log("i", "[type, nestDepth, index]", "::", i, type, index, nestDepth);
 
             if (nestDepth == referenceNestDepth - 1) {
                 rangeEnd = index - 1;
@@ -149,21 +128,14 @@ export function updateDecorations(editor:vscode.TextEditor) {
                 if (loopStart == nextLoopStart) {
                     nextLoopStart = i;
                 }
-                // console.log("\t=== if (nestDepth == referenceNestDepth - 1) [break]===");
-                // console.log("\trangeEnd, nextLoopStart=", rangeEnd, nextLoopStart);
                 break
             }
 
             if (i == loopStart) {
                 rangeStart = index + 1;
                 referenceNestDepth = nestDepth;
-                // console.log("\t=== if (i == loopStart) ===");
-                // console.log("\trangeStart, referenceNestDepth=", rangeStart, referenceNestDepth);
-
             } else if (type == "begin" && loopStart == nextLoopStart) {
                 nextLoopStart = i;
-                // console.log("\t=== else if (type == \"begin\" && loopStart == nextLoopStart) ===");
-                // console.log("\tnextLoopStart=", nextLoopStart);
             }
 
             if (type == "begin" && nestDepth == referenceNestDepth + 1) {
@@ -176,32 +148,18 @@ export function updateDecorations(editor:vscode.TextEditor) {
                         }
                     );
                 }
-
-                // console.log("\t=== if (type == \"begin\" && nestDepth == referenceNestDepth + 1) ===");
-                // console.log("\trangeEnd=", rangeEnd);
             } else if (type == "end" && nestDepth == referenceNestDepth) {
                 rangeStart = index + 1;
-                // console.log("\t=== else if (type == \"end\" && nestDepth == referenceNestDepth) ===");
-                // console.log("\trangeStart=", rangeStart);
             }
-
-            // console.log("\t=== for end ===");
-            // console.log("\trangeStart, rangeEnd=", rangeStart, rangeEnd);
-            // console.log(rangeInfoList);
         }
 
-        // console.log("\t=== while end ===");
-        // console.log("\tloopStart, nextLoopStart, rangeStart, rangeEnd=", loopStart, nextLoopStart, rangeStart, rangeEnd);
         if (loopStart == nextLoopStart) {
             break
         }
         loopStart = nextLoopStart;
     }
 
-    console.log(rangeInfoList);
-    console.log("=================================================");
-    // console.log(rangeInfoList.length);
-    // console.log("=================================================");
+    // console.log(rangeInfoList);
 
     const lastBracketInfo = bracketInfoList[bracketInfoList.length - 1];
     if (lastBracketInfo.nestDepth == 0) {
@@ -213,6 +171,12 @@ export function updateDecorations(editor:vscode.TextEditor) {
     }
 }
 
+export function disposeDecorationType() {
+    for (const decorationType of decorationTypes) {
+        decorationType.dispose();
+    }
+    decorationTypes = [];
+}
 
 function _hasSameRange(rangeInfoList:RangeInfo[], rangeStart:number, rangeEnd:number):boolean {
     for (const rangeInfo of rangeInfoList) {
@@ -226,8 +190,10 @@ function _hasSameRange(rangeInfoList:RangeInfo[], rangeStart:number, rangeEnd:nu
     return false
 }
 
-
 function _setDecorations(editor:vscode.TextEditor, rangeInfoList:RangeInfo[], selLine:number, offset:number) {
+    const COLORS:string[] = config.getColors();
+    const BORDER_COLOR = "#505070"
+
     interface DecoInfo {
         [nestDepth:number]: {
             range: vscode.Range[],
@@ -241,9 +207,12 @@ function _setDecorations(editor:vscode.TextEditor, rangeInfoList:RangeInfo[], se
         const rangeEnd   = rangeInfoList[i].range[1];
         const nestDepth  = rangeInfoList[i].nestDepth;
 
-        const color = colors[nestDepth];
+        const color = COLORS[nestDepth-1];
         const bgColorDecoType = vscode.window.createTextEditorDecorationType({
             backgroundColor: `${color}`,
+            borderWidth: "1px",
+            borderStyle: "solid",
+            borderColor: `${BORDER_COLOR}`
         });
 
         const startPosition = new vscode.Position(selLine, rangeStart+offset);
@@ -270,13 +239,19 @@ function _setDecorations(editor:vscode.TextEditor, rangeInfoList:RangeInfo[], se
         const decoType = decoInfo[neseDepth]["decoType"];
         const color = decoInfo[neseDepth]["color"];
         editor.setDecorations(decoType, rangeInfoList);
-        console.log(color);
-        console.log(rangeInfoList);
+        // console.log(rangeInfoList);
         decorationTypes.push(decoType);
     }
 }
 
 function _setErrorDecorations(editor:vscode.TextEditor, bracketInfoList:BracketInfo[], selLine:number, offset:number) {
+    interface ErrorColors {
+        bracketBegin:string,
+        bracketEnd:string,
+        noNesting:string
+    };
+    const ERROR_COLORS:ErrorColors = config.getErrorColors();
+
     interface ErrorDecoInfo {
         [errorType:string]: {
             range: vscode.Range[],
@@ -286,17 +261,15 @@ function _setErrorDecorations(editor:vscode.TextEditor, bracketInfoList:BracketI
     let errorDecoInfo:ErrorDecoInfo = {};
     for (let i = 0; i < bracketInfoList.length; i++) {
         const index = bracketInfoList[i].index;
-        
+
         const type = bracketInfoList[i].type;
         const nestDepth = bracketInfoList[i].nestDepth;
         if (i != 0) {
             var prevType = bracketInfoList[i-1].type;
             var prevNestDepth = bracketInfoList[i-1].nestDepth - 1;
-            var prevIndex = bracketInfoList[i-1].index;
         } else {
             var prevType = type;
             var prevNestDepth = 0;
-            var prevIndex = 0;
         }
         if (i != bracketInfoList.length - 1) {
             var nextType = bracketInfoList[i+1].type;
@@ -307,23 +280,15 @@ function _setErrorDecorations(editor:vscode.TextEditor, bracketInfoList:BracketI
             var nextNestDepth = 0;
             var nextIndex = 0;
         }
-        console.log(type, nestDepth, prevNestDepth, nextNestDepth);
-        // console.log((type == "begin" && nestDepth == nextNestDepth));
-        // console.log((type == "end"   && nestDepth == prevNestDepth));
-        console.log((type == "begin" && nextType == "end" && nestDepth == nextNestDepth) ||
-                    (type == "end" && prevType == "begin" && nestDepth == prevNestDepth));
-
 
         // Bracket Error
         var color;
-        var needBorder:boolean = false;
         let startPosition = new vscode.Position(selLine, index + offset);
         let endPosition   = new vscode.Position(selLine, index + offset + 1);
 
         if ((type == "begin" && nextType == "end" && nestDepth == nextNestDepth) ||
             (type == "end" && prevType == "begin" && nestDepth == prevNestDepth)) {
             color = ERROR_COLORS.noNesting;
-            needBorder = true;
 
             if (type == "begin") {
                 startPosition = new vscode.Position(selLine, index + offset + 1);
@@ -345,14 +310,7 @@ function _setErrorDecorations(editor:vscode.TextEditor, bracketInfoList:BracketI
         let decoration:Decoration = {
             backgroundColor: `${color}`
         }
-        // if (needBorder) {
-        //     decoration["borderWidth"] = '1px';
-        //     decoration["borderStyle"] = 'solid';
-        // }
         const decoType = vscode.window.createTextEditorDecorationType(decoration);
-        console.log(color);
-        console.log(index + offset, index + offset + 1);
-        console.log("");
 
         var errorType:string = "";
         if (color == ERROR_COLORS.noNesting) {
@@ -384,7 +342,7 @@ function _setErrorDecorations(editor:vscode.TextEditor, bracketInfoList:BracketI
         const rangeInfoList = errorDecoInfo[errorType].range;
         const decoType = errorDecoInfo[errorType].decoType;
         editor.setDecorations(decoType, rangeInfoList);
-        console.log(rangeInfoList);
+        // console.log(rangeInfoList);
         decorationTypes.push(decoType);
     }
 }
