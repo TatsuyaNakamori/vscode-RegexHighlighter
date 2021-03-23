@@ -2,7 +2,9 @@
   "name": "regexhighlighter",
   "displayName": "RegexHighlighter",
   "description": "%ext.description%",
+  "icon": "resources/icon/extension_main.png",
   "version": "0.0.1",
+  "publisher": "TatsuyaNakamori",
   "engines": {
     "vscode": "^1.54.0"
   },
@@ -33,12 +35,123 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "regexhighlighter.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+        "commands": [
+            {
+                "category": "RegexHighlighter",
+                "command": "regexhighlighter.stopHighlighting",
+                "title": "%regexhighlighter.stopHighlighting.title%"
+            },
+            {
+                "category": "RegexHighlighter",
+                "command": "regexhighlighter.resumeHighlighting",
+                "title": "%regexhighlighter.resumeHighlighting.title%"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "regexhighlighter.stopHighlighting",
+                    "when": "!regexhighlighter.stop.highlighting"
+                },
+                {
+                    "command": "regexhighlighter.resumeHighlighting",
+                    "when": "regexhighlighter.stop.highlighting"
+                }
+            ],
+            "editor/context": [
+                {
+                    "group": "2_configure.RegexHighlighter.settings",
+                    "command": "regexhighlighter.stopHighlighting",
+                    "when": "!regexhighlighter.stop.highlighting"
+                },
+                {
+                    "group": "2_configure.RegexHighlighter.settings",
+                    "command": "regexhighlighter.resumeHighlighting",
+                    "when": "regexhighlighter.stop.highlighting"
+                }
+            ]
+        },
+        "configuration": [
+            {
+                "title": "RegexHighlighter",
+                "properties": {
+                    "regexhighlighter.highlight.color": {
+                        "type": "object",
+                        "properties": {
+                            "BracketNestDepthLevel 1": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 2": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 3": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 4": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 5": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 6": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 7": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 8": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 9": {
+                                "type": "string"
+                            },
+                            "BracketNestDepthLevel 10": {
+                                "type": "string"
+                            }
+                        },
+                        "default": {
+                            "BracketNestDepthLevel 1": "hsla(230, 60%, 30%, 0.55)",
+                            "BracketNestDepthLevel 2": "hsla(185, 80%, 30%, 0.55)",
+                            "BracketNestDepthLevel 3": "hsla(170, 60%, 30%, 0.55)",
+                            "BracketNestDepthLevel 4": "hsla(140, 60%, 30%, 0.55)",
+                            "BracketNestDepthLevel 5": "hsla(110, 60%, 30%, 0.55)",
+                            "BracketNestDepthLevel 6": "hsla( 90, 60%, 30%, 0.55)",
+                            "BracketNestDepthLevel 7": "hsla( 60, 60%, 30%, 0.55)",
+                            "BracketNestDepthLevel 8": "hsla( 30, 60%, 30%, 0.55)",
+                            "BracketNestDepthLevel 9": "hsla(  0, 60%, 30%, 0.55)",
+                            "BracketNestDepthLevel 10": "hsla(330, 60%, 30%, 0.55)"
+                        },
+                        "uniqueItems": true,
+                        "markdownDescription": "%conf.highlight.color%"
+                    },
+                    "regexhighlighter.highlight.errorColor": {
+                        "type": "object",
+                        "properties": {
+                            "bracketBegin": {
+                                "type": "string"
+                            },
+                            "bracketEnd": {
+                                "type": "string"
+                            },
+                            "noNesting": {
+                                "type": "string"
+                            }
+                        },
+                        "default": {
+                            "bracketBegin": "rgba(225, 0, 0, 0.9)",
+                            "bracketEnd"  : "rgba(225, 0, 0, 0.9)",
+                            "noNesting"   : "rgba(100, 50, 50, 0.6)"
+                        },
+                        "uniqueItems": true,
+                        "markdownDescription": "%conf.highlight.errorColor%"
+                    },
+                    "regexhighlighter.stoppingRegexHighlighting": {
+                        "type": "boolean",
+                        "markdownDescription": "%conf.stoppingRegexHighlighting%"
+                    }
+                }
+            }
+        ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
