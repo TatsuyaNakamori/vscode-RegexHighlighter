@@ -1,3 +1,10 @@
 {
-    "ext.description": "Extends Regex highlighting."
+    "ext.description": "Extends Regex highlighting.",
+
+    "conf.highlight.color": "CSS styling properties applied to the background color. The color will change according to the nesting depth of the round brackets.",
+    "conf.highlight.errorColor": "CSS styling properties applied to the background color. Color to display when an error occurs when the number of round brackets does not match.",
+    "conf.stoppingRegexHighlighting": "Stopping Regex highlighting.",
+
+    "regexhighlighter.stopHighlighting.title": "Stopping Regex highlighting",
+    "regexhighlighter.resumeHighlighting.title": "Resume Regex highlighting"
 }

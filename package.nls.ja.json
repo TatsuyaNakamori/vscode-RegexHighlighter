@@ -1,3 +1,10 @@
 {
-    "ext.description": "Regexのハイライト表示を拡張します。"
+    "ext.description": "Regexのハイライト表示を拡張します。",
+
+    "conf.highlight.color": "背景色に適用されるCSSスタイリングプロパティ。丸カッコのネストの深さに合わせて色が変化します。",
+    "conf.highlight.errorColor": "背景色に適用されるCSSスタイリングプロパティ。丸カッコの数が合わないときのエラー時に表示する色。",
+    "conf.stoppingRegexHighlighting": "正規表現のハイライト表示を停止します。",
+
+    "regexhighlighter.stopHighlighting.title": "正規表現のハイライト表示の停止",
+    "regexhighlighter.resumeHighlighting.title": "正規表現のハイライト表示の再開"
 }
