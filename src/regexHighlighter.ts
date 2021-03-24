@@ -25,7 +25,7 @@ interface BracketInfo {
 
 export function updateDecorations(editor:vscode.TextEditor, changedConfig?:boolean) {
     if (config.getStopHighlighting()) {
-        disposeDecorationType();
+        _disposeDecorationType();
         return
     }
 
@@ -38,13 +38,9 @@ export function updateDecorations(editor:vscode.TextEditor, changedConfig?:boole
         return
     }
 
-    disposeDecorationType();
-
+    _disposeDecorationType();
     // First, Extracting regular expression strings
-    // Result:
-    //     offset: Number of characters before the start of the regular expression string
-    //     regString: Regular expression string
-    const regRegString = /(?<prev>.*?r?(\/|\"|\"\"\"|\'|\'\'\'))(?<regString>.*)(\/|\"|\"\"\"|\'|\'\'\')/;
+    const regRegString = /(?<prev>.*?r?(\/|\"|\"\"\"|\'|\'\'\'))(?<regString>.*)(\2)/;
     let match = regRegString.exec(lineText);
     if (!match) { return }
     const matchGroups = match.groups;
@@ -54,10 +50,35 @@ export function updateDecorations(editor:vscode.TextEditor, changedConfig?:boole
     const regString = matchGroups.regString;
 
     // Parse Regex
+    const bracketInfoList:BracketInfo[] = _parseRegex(regString);
+    console.log(bracketInfoList);
+
+    // Generate the rangeInfo in the bracket.
+    const rangeInfoInBracketList:RangeInfo[] = _generateRangeInfoInBracket(bracketInfoList);
+    console.log(rangeInfoInBracketList);
+
+    const lastBracketInfo = bracketInfoList[bracketInfoList.length - 1];
+    if (lastBracketInfo.nestDepth == 0) {
+        _setDecorations(editor, rangeInfoInBracketList, selLine, offset);
+    } else if (lastBracketInfo.nestDepth > 0) {
+        _setErrorDecorations(editor, bracketInfoList, selLine, offset);
+    } else {
+        _setErrorDecorations(editor, bracketInfoList, selLine, offset);
+    }
+}
+
+function _disposeDecorationType() {
+    for (const decorationType of decorationTypes) {
+        decorationType.dispose();
+    }
+    decorationTypes = [];
+}
+
+function _parseRegex(regString:string):BracketInfo[] {
     let bracketInfoList:BracketInfo[] = [];
 
     let escapeFlag:boolean = false;
-    let bracketCount:number = 0;
+    let bracketDepthLevel:number = 0;
     for (let i = 0; i < regString.length; i++) {
         const str = regString[i];
         const escapeMatch  = str.match(/\\/);
@@ -75,10 +96,10 @@ export function updateDecorations(editor:vscode.TextEditor, changedConfig?:boole
 
         // Bracket Count
         if (bracketBegin && !escapeFlag) {
-            bracketCount += 1;
+            bracketDepthLevel += 1;
         }
         if (bracketEnd && !escapeFlag) {
-            bracketCount -= 1;
+            bracketDepthLevel -= 1;
         }
 
         // BracketInfo
@@ -92,18 +113,19 @@ export function updateDecorations(editor:vscode.TextEditor, changedConfig?:boole
         }
         const bracketInfo:BracketInfo = {
             type: bracketInfoType,
-            nestDepth: bracketCount,
+            nestDepth: bracketDepthLevel,
             index: i
         }
         bracketInfoList.push(bracketInfo);
     }
+    return bracketInfoList
+}
 
-    // console.log(bracketInfoList);
+function _generateRangeInfoInBracket(bracketInfoList:BracketInfo[]):RangeInfo[] {
+    let rangeInfoList:RangeInfo[] = [];
 
     let loopStart:number = 0;
     let nextLoopStart:number = 0;
-
-    let rangeInfoList:RangeInfo[] = [];
     while (loopStart < bracketInfoList.length) {
         let referenceNestDepth:number = 0;
         let rangeStart:number = 0;
@@ -158,24 +180,7 @@ export function updateDecorations(editor:vscode.TextEditor, changedConfig?:boole
         }
         loopStart = nextLoopStart;
     }
-
-    // console.log(rangeInfoList);
-
-    const lastBracketInfo = bracketInfoList[bracketInfoList.length - 1];
-    if (lastBracketInfo.nestDepth == 0) {
-        _setDecorations(editor, rangeInfoList, selLine, offset);
-    } else if (lastBracketInfo.nestDepth > 0) {
-        _setErrorDecorations(editor, bracketInfoList, selLine, offset);
-    } else {
-        _setErrorDecorations(editor, bracketInfoList, selLine, offset);
-    }
-}
-
-export function disposeDecorationType() {
-    for (const decorationType of decorationTypes) {
-        decorationType.dispose();
-    }
-    decorationTypes = [];
+    return rangeInfoList
 }
 
 function _hasSameRange(rangeInfoList:RangeInfo[], rangeStart:number, rangeEnd:number):boolean {
@@ -342,7 +347,6 @@ function _setErrorDecorations(editor:vscode.TextEditor, bracketInfoList:BracketI
         const rangeInfoList = errorDecoInfo[errorType].range;
         const decoType = errorDecoInfo[errorType].decoType;
         editor.setDecorations(decoType, rangeInfoList);
-        // console.log(rangeInfoList);
         decorationTypes.push(decoType);
     }
 }
