@@ -13,14 +13,16 @@
     "theme": "dark"
   },
   "categories": [
-    "Themes",
     "Other"
   ],
   "license": "MIT",
   "preview": true,
   "keywords": [
     "regex",
-    "highlight"
+    "regular expression",
+    "highlight",
+    "javascript",
+    "python"
   ],
   "homepage": "https://github.com/TatsuyaNakamori/vscode-RegexHighlighter",
     "repository": {
