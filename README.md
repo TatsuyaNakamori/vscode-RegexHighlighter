@@ -1,3 +1,25 @@
+# Close tool (ツールのクローズ)
+
+The same functionality has been added to the official VSCode.
+https://code.visualstudio.com/updates/v1_67#_bracket-pair-colorization-enabled-by-default
+
+Some usability is different, but it works more stable than my script.
+In other words... I would like to finish the development of this extension and leave the future development to VSCode official.
+
+Thank you for using my tool.
+
+[Japanese]
+
+VSCodeの公式に、同じ機能が追されました。
+https://code.visualstudio.com/updates/v1_67#_bracket-pair-colorization-enabled-by-default
+
+一部使い勝手が違いますが、私のスクリプトより安定して動作します。
+つまりは... この拡張機能の開発は終了し、今後の展開はVSCode公式に任せたいと思います。
+
+私のツールを使っていただき、ありがとうございました。
+
+---------------------------------
+
 # Regex Highlighter README
 * Japanese is [here](https://github.com/TatsuyaNakamori/vscode-RegexHighlighter/blob/master/README.jp.md).
 
